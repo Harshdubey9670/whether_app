@@ -7,14 +7,21 @@ const Register = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const { register } = useAuth();
   const navigate = useNavigate();
+  const [error, setError] = useState('');
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate register API call
-    login({ email, name });
-    navigate('/dashboard');
+    setError('');
+    
+    const result = await register({ name, email, password });
+    
+    if (result.success) {
+      navigate('/dashboard');
+    } else {
+      setError(result.error || 'Registration failed. Please try again.');
+    }
   };
 
   return (
@@ -32,6 +39,12 @@ const Register = () => {
                 Join WeatherVerse AI and get advanced insights.
               </p>
             </div>
+
+            {error && (
+              <div className="mb-6 p-3 bg-red-100 border border-red-200 text-red-600 rounded-xl text-sm font-medium">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-5">
               <div>

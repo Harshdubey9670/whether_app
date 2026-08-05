@@ -27,10 +27,10 @@ const getCurrentWeather = async (req, res, next) => {
     }
 
     // Determine if q is a coordinate string (lat,lng) or a city name
-    let queryParam = `q=${q}`;
+    let queryParam = `q=${encodeURIComponent(q)}`;
     if (q.includes(',')) {
       const [lat, lon] = q.split(',');
-      queryParam = `lat=${lat}&lon=${lon}`;
+      queryParam = `lat=${encodeURIComponent(lat.trim())}&lon=${encodeURIComponent(lon.trim())}`;
     }
 
     const currentUrl = `https://api.openweathermap.org/data/2.5/weather?${queryParam}&appid=${apiKey}&units=metric`;
@@ -119,7 +119,7 @@ const searchLocation = async (req, res, next) => {
       return res.json([{ id: 1, name: 'Mock City', country: 'Mock Country' }]);
     }
 
-    const url = `https://api.openweathermap.org/geo/1.0/direct?q=${q}&limit=5&appid=${apiKey}`;
+    const url = `https://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(q)}&limit=5&appid=${apiKey}`;
     const response = await fetch(url);
     if (!response.ok) {
       console.warn(`OpenWeatherMap returned ${response.status}: Falling back to mock data.`);

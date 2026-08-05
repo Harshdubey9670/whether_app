@@ -9,11 +9,19 @@ const Login = () => {
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  const [error, setError] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Simulate login API call
-    login({ email, name: 'User' });
-    navigate('/dashboard');
+    setError('');
+    
+    const result = await login({ email, password });
+    
+    if (result.success) {
+      navigate('/dashboard');
+    } else {
+      setError(result.error || 'Login failed. Please check your credentials.');
+    }
   };
 
   return (
@@ -31,6 +39,12 @@ const Login = () => {
                 Sign in to access your intelligence dashboard.
               </p>
             </div>
+
+            {error && (
+              <div className="mb-6 p-3 bg-red-100 border border-red-200 text-red-600 rounded-xl text-sm font-medium">
+                {error}
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
