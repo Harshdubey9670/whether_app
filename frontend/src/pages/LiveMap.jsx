@@ -4,7 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { 
   Thermometer, Droplets, Wind, Cloud, Navigation, Loader2, 
-  MapPin, Maximize, Minimize, Play, Pause, Layers, Gauge
+  MapPin, Maximize, Minimize, Play, Pause, Layers, Gauge, AlertCircle
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useLocation as useAppLocation } from '../contexts/LocationContext';
