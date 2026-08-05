@@ -11,6 +11,7 @@ import WeatherJournal from './pages/WeatherJournal';
 import Astronomy from './pages/Astronomy';
 import HealthCenter from './pages/HealthCenter';
 import AdminDashboard from './pages/AdminDashboard';
+import AIAssistant from './pages/AIAssistant';
 import Settings from './pages/Settings';
 
 import ForgotPassword from './pages/ForgotPassword';
@@ -28,6 +29,7 @@ function App() {
       <Route path="/dashboard" element={<DashboardLayout />}>
         <Route index element={<Dashboard />} />
         <Route path="map" element={<LiveMap />} />
+        <Route path="ai" element={<AIAssistant />} />
         <Route path="community" element={<Community />} />
         <Route path="journal" element={<WeatherJournal />} />
         <Route path="astronomy" element={<Astronomy />} />

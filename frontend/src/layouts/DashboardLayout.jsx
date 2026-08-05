@@ -1,11 +1,12 @@
 import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ForcePasswordChangeDialog from '../components/ForcePasswordChangeDialog';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState } from 'react';
 import { 
   CloudSun, LayoutDashboard, Map, Activity, Compass, 
   Calendar, Users, Settings, LogOut, Bell, Sun, Moon,
-  ChevronRight, User, Shield, X, Menu, Loader2
+  ChevronRight, User, Shield, X, Menu, Loader2, Bot
 } from 'lucide-react';
 
 const DashboardLayout = () => {
@@ -13,6 +14,7 @@ const DashboardLayout = () => {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   if (loading) {
     return (
@@ -34,6 +36,7 @@ const DashboardLayout = () => {
   const navItems = [
     { to: '/dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard', end: true },
     { to: '/dashboard/map', icon: <Map className="w-5 h-5" />, label: 'Live Radar' },
+    { to: '/dashboard/ai', icon: <Bot className="w-5 h-5" />, label: 'AI Assistant' },
     { to: '/dashboard/health', icon: <Activity className="w-5 h-5" />, label: 'Health Center' },
     { to: '/dashboard/astronomy', icon: <Compass className="w-5 h-5" />, label: 'Astronomy' },
     { to: '/dashboard/journal', icon: <Calendar className="w-5 h-5" />, label: 'Weather Journal' },
@@ -158,10 +161,36 @@ const DashboardLayout = () => {
           
           <div className="flex items-center gap-2">
             {/* Notifications */}
-            <button className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
-            </button>
+            <div className="relative">
+              <button onClick={() => setNotificationsOpen(!notificationsOpen)} className="relative p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                <Bell className="w-5 h-5" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full" />
+              </button>
+              
+              {notificationsOpen && (
+                <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-xl z-50 overflow-hidden">
+                  <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h3 className="font-bold text-slate-800 dark:text-white">Notifications</h3>
+                    <button onClick={() => setNotificationsOpen(false)} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className="max-h-[300px] overflow-y-auto p-2">
+                    {/* Simulated Notifications */}
+                    <div className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors cursor-pointer mb-1">
+                      <p className="font-semibold text-sm text-slate-800 dark:text-white">WeatherVerse Test Alert</p>
+                      <p className="text-xs text-slate-500 mt-1">This is a test notification from WeatherVerse!</p>
+                      <p className="text-[10px] text-slate-400 mt-2">Just now</p>
+                    </div>
+                    <div className="p-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-xl transition-colors cursor-pointer">
+                      <p className="font-semibold text-sm text-slate-800 dark:text-white">Heavy Rain Expected</p>
+                      <p className="text-xs text-slate-500 mt-1">Grab an umbrella, rain is expected to start at 4:00 PM.</p>
+                      <p className="text-[10px] text-slate-400 mt-2">2 hours ago</p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
             
             {/* Theme Toggle */}
             <button onClick={toggleTheme} className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
@@ -185,6 +214,7 @@ const DashboardLayout = () => {
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-transparent">
           <Outlet />
         </div>
+        {user?.requiresPasswordChange && <ForcePasswordChangeDialog />}
       </main>
     </div>
   );

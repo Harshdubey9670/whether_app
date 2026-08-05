@@ -30,6 +30,11 @@ export const getProfile = async () => {
   return response.data;
 };
 
+export const updateProfile = async (profileData) => {
+  const response = await api.put('/auth/profile', profileData);
+  return response.data;
+};
+
 // Weather Services
 export const getCurrentWeather = async (query) => {
   const response = await api.get(`/weather/current?q=${query}`);
@@ -42,8 +47,8 @@ export const searchLocation = async (query) => {
 };
 
 // AI Services
-export const askAIAssistant = async (question, contextData) => {
-  const response = await api.post('/ai/ask', { question, contextData });
+export const askAIAssistant = async (question, contextData, history = []) => {
+  const response = await api.post('/ai/ask', { question, contextData, history });
   return response.data;
 };
 
@@ -80,6 +85,27 @@ export const createJournalEntry = async (formData) => {
   const response = await api.post('/journal', formData, {
     headers: { 'Content-Type': 'multipart/form-data' },
   });
+  return response.data;
+};
+
+// Notification Services
+export const getVapidPublicKey = async () => {
+  const response = await api.get('/notifications/vapid-public-key');
+  return response.data.publicKey;
+};
+
+export const subscribePush = async (subscription) => {
+  const response = await api.post('/notifications/subscribe', { subscription });
+  return response.data;
+};
+
+export const updateNotificationPreferences = async (notifications) => {
+  const response = await api.put('/notifications/preferences', { notifications });
+  return response.data;
+};
+
+export const triggerTestNotification = async (type) => {
+  const response = await api.post('/notifications/test', { type });
   return response.data;
 };
 

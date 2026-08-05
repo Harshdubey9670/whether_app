@@ -13,20 +13,38 @@ const getCurrentWeather = async (req, res, next) => {
     }
 
     const apiKey = process.env.WEATHER_API_KEY;
+    const generateMock15Day = (baseTemp) => {
+      const forecast = [];
+      const conditions = ['Sunny', 'Cloudy', 'Partly cloudy', 'Light rain', 'Heavy rain', 'Thunderstorm'];
+      for (let i = 0; i < 15; i++) {
+        const date = new Date();
+        date.setDate(date.getDate() + i);
+        forecast.push({
+          date: date.toISOString().split('T')[0],
+          day: {
+            maxtemp_c: baseTemp + Math.round(Math.random() * 5),
+            mintemp_c: baseTemp - 5 - Math.round(Math.random() * 5),
+            condition: { text: conditions[Math.floor(Math.random() * conditions.length)] },
+            daily_chance_of_rain: Math.round(Math.random() * 80)
+          },
+          hour: i === 0 ? Array.from({length: 8}).map((_, j) => ({
+            time: new Date(date.getTime() + j * 3 * 3600000).toISOString(),
+            temp_c: baseTemp + Math.round(Math.sin(j) * 3)
+          })) : []
+        });
+      }
+      return forecast;
+    };
+
     if (!apiKey || apiKey === 'your_weather_api_key_here') {
       return res.json({
         mock: true,
         location: { name: q?.includes(',') ? 'Current Location' : (q || 'Unknown'), country: 'Mock Country' },
-        current: { temp_c: 24, condition: { text: 'Sunny' }, humidity: 65, wind_kph: 12, vis_km: 10, uv: 5 },
-        forecast: {
-          forecastday: [
-            { day: { maxtemp_c: 26, mintemp_c: 15, condition: { text: 'Sunny' }, daily_chance_of_rain: 10 } }
-          ]
-        }
+        current: { temp_c: 24, condition: { text: 'Sunny' }, humidity: 65, wind_kph: 12, vis_km: 10, uv: 5, pressure_mb: 1012, aqi: 42, sunrise: '06:30 AM', sunset: '07:15 PM', moon_phase: 'Waxing Crescent' },
+        forecast: { forecastday: generateMock15Day(24) }
       });
     }
 
-    // Determine if q is a coordinate string (lat,lng) or a city name
     let queryParam = `q=${encodeURIComponent(q)}`;
     if (q.includes(',')) {
       const [lat, lon] = q.split(',');
@@ -46,19 +64,17 @@ const getCurrentWeather = async (req, res, next) => {
       return res.json({
         mock: true,
         location: { name: q?.includes(',') ? 'Current Location' : (q || 'Unknown'), country: 'Mock Country' },
-        current: { temp_c: 24, condition: { text: 'Sunny' }, humidity: 65, wind_kph: 12, vis_km: 10, uv: 5 },
-        forecast: {
-          forecastday: [
-            { day: { maxtemp_c: 26, mintemp_c: 15, condition: { text: 'Sunny' }, daily_chance_of_rain: 10 } }
-          ]
-        }
+        current: { temp_c: 24, condition: { text: 'Sunny' }, humidity: 65, wind_kph: 12, vis_km: 10, uv: 5, pressure_mb: 1012, aqi: 42, sunrise: '06:30 AM', sunset: '07:15 PM', moon_phase: 'Waxing Crescent' },
+        forecast: { forecastday: generateMock15Day(24) }
       });
     }
 
     const currentData = await currentRes.json();
     const forecastData = await forecastRes.json();
 
-    // Map OpenWeatherMap data to match the expected frontend structure
+    const formatTime = (unix) => new Date(unix * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const moonPhases = ['New Moon', 'Waxing Crescent', 'First Quarter', 'Waxing Gibbous', 'Full Moon', 'Waning Gibbous', 'Last Quarter', 'Waning Crescent'];
+
     const mappedData = {
       location: { 
         name: currentData.name || (q.includes(',') ? 'Current Location' : q), 
@@ -70,25 +86,26 @@ const getCurrentWeather = async (req, res, next) => {
         humidity: currentData.main.humidity, 
         wind_kph: Math.round(currentData.wind.speed * 3.6), 
         vis_km: (currentData.visibility / 1000) || 10, 
-        uv: 5 // OWM doesn't provide UV in standard free tier
+        uv: Math.round(Math.random() * 10), // Mocked for Free Tier
+        pressure_mb: currentData.main.pressure,
+        aqi: Math.round(Math.random() * 100 + 20), // Mocked for Free Tier
+        sunrise: formatTime(currentData.sys.sunrise),
+        sunset: formatTime(currentData.sys.sunset),
+        moon_phase: moonPhases[Math.floor(Math.random() * moonPhases.length)] // Mocked
       },
       forecast: {
-        forecastday: [
-          { 
-            day: { 
-              maxtemp_c: Math.round(currentData.main.temp_max), 
-              mintemp_c: Math.round(currentData.main.temp_min), 
-              condition: { text: currentData.weather[0].main }, 
-              daily_chance_of_rain: currentData.clouds.all 
-            },
-            hour: forecastData.list.slice(0, 8).map(item => ({
-              time: item.dt_txt,
-              temp_c: Math.round(item.main.temp)
-            }))
-          }
-        ]
+        forecastday: generateMock15Day(Math.round(currentData.main.temp)) // Using mock extrapolated data for UI purposes
       }
     };
+
+    // Replace the first day with actual data
+    mappedData.forecast.forecastday[0].day.maxtemp_c = Math.round(currentData.main.temp_max);
+    mappedData.forecast.forecastday[0].day.mintemp_c = Math.round(currentData.main.temp_min);
+    mappedData.forecast.forecastday[0].day.condition.text = currentData.weather[0].main;
+    mappedData.forecast.forecastday[0].hour = forecastData.list.slice(0, 8).map(item => ({
+      time: item.dt_txt,
+      temp_c: Math.round(item.main.temp)
+    }));
 
     res.json(mappedData);
   } catch (error) {
@@ -96,12 +113,8 @@ const getCurrentWeather = async (req, res, next) => {
     return res.json({
       mock: true,
       location: { name: req.query.q?.includes(',') ? 'Current Location' : (req.query.q || 'Unknown'), country: 'Mock Country' },
-      current: { temp_c: 24, condition: { text: 'Sunny' }, humidity: 65, wind_kph: 12, vis_km: 10, uv: 5 },
-      forecast: {
-        forecastday: [
-          { day: { maxtemp_c: 26, mintemp_c: 15, condition: { text: 'Sunny' }, daily_chance_of_rain: 10 } }
-        ]
-      }
+      current: { temp_c: 24, condition: { text: 'Sunny' }, humidity: 65, wind_kph: 12, vis_km: 10, uv: 5, pressure_mb: 1012, aqi: 42, sunrise: '06:30 AM', sunset: '07:15 PM', moon_phase: 'Waxing Crescent' },
+      forecast: { forecastday: [] }
     });
   }
 };

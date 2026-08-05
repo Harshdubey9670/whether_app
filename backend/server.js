@@ -58,6 +58,7 @@ import weatherRoutes from './src/routes/weatherRoutes.js';
 import aiRoutes from './src/routes/aiRoutes.js';
 import communityRoutes from './src/routes/communityRoutes.js';
 import journalRoutes from './src/routes/journalRoutes.js';
+import notificationRoutes from './src/routes/notificationRoutes.js';
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'WeatherVerse AI API is running' });
@@ -69,6 +70,7 @@ app.use('/api/weather', weatherRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/journal', journalRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Error Handling Middleware
 app.use(notFound);

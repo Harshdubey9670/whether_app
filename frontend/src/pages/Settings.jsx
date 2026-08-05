@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTheme } from '../contexts/ThemeContext';
 import { useLocation } from '../contexts/LocationContext';
+import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate } from 'react-router-dom';
+import { updateNotificationPreferences, getVapidPublicKey, subscribePush, triggerTestNotification } from '../services/api';
 import { User, Bell, Shield, Palette, MapPin, ChevronRight, Save, LogOut, Sun, Moon, Navigation } from 'lucide-react';
 
 const SettingsSection = ({ title, icon, children }) => (
@@ -39,18 +41,70 @@ const Settings = () => {
   const navigate = useNavigate();
 
   const [notifications, setNotifications] = useState({
-    weatherAlerts: true,
-    dailyForecast: true,
-    communityUpdates: false,
-    severeWeather: true,
+    weatherAlerts: user?.preferences?.notifications?.weatherAlerts || false,
+    dailyForecast: user?.preferences?.notifications?.dailyForecast || false,
+    communityUpdates: user?.preferences?.notifications?.communityUpdates || false,
+    severeWeather: user?.preferences?.notifications?.severeWarnings || false,
+    pushAlerts: user?.preferences?.notifications?.pushAlerts || false,
+    emailAlerts: user?.preferences?.notifications?.emailAlerts || false,
   });
 
-  const [units, setUnits] = useState('metric'); // metric | imperial
+  const { units, setUnits } = useSettings();
   const [saved, setSaved] = useState(false);
+  const [pushStatus, setPushStatus] = useState('');
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    try {
+      await updateNotificationPreferences({
+        weatherAlerts: notifications.weatherAlerts,
+        dailyForecast: notifications.dailyForecast,
+        severeWarnings: notifications.severeWeather,
+        communityUpdates: notifications.communityUpdates,
+        pushAlerts: notifications.pushAlerts,
+        emailAlerts: notifications.emailAlerts,
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to save preferences');
+    }
+  };
+
+  const handleEnablePush = async () => {
+    setPushStatus('Requesting...');
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setPushStatus('Denied');
+        return;
+      }
+      const registration = await navigator.serviceWorker.register('/sw.js');
+      const publicKey = await getVapidPublicKey();
+      
+      const subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: publicKey
+      });
+
+      await subscribePush(subscription);
+      setNotifications(prev => ({ ...prev, pushAlerts: true }));
+      setPushStatus('Enabled!');
+      setTimeout(() => setPushStatus(''), 2000);
+    } catch (err) {
+      console.error(err);
+      setPushStatus('Failed');
+    }
+  };
+
+  const handleTestNotification = async (type) => {
+    try {
+      await triggerTestNotification(type);
+      alert(`Test ${type} notification queued!`);
+    } catch (e) {
+      console.error(e);
+      alert('Failed to queue test notification');
+    }
   };
 
   const handleLogout = async () => {
@@ -148,11 +202,33 @@ const Settings = () => {
 
       {/* Notifications */}
       <SettingsSection title="Notifications" icon={<Bell className="w-5 h-5" />}>
-        <div className="divide-y divide-slate-100 dark:divide-slate-800">
+        <div className="mb-6 p-4 bg-primary-50 dark:bg-primary-900/20 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div>
+            <p className="font-bold text-slate-800 dark:text-white">Delivery Methods</p>
+            <p className="text-sm text-slate-500">Enable how you want to receive alerts.</p>
+          </div>
+          <div className="flex gap-2">
+             <button onClick={handleEnablePush} className="px-4 py-2 bg-indigo-500 text-white rounded-xl text-sm font-semibold hover:bg-indigo-600 transition-colors">
+               {pushStatus || (notifications.pushAlerts ? 'Push Enabled' : 'Enable Web Push')}
+             </button>
+          </div>
+        </div>
+
+        <div className="divide-y divide-slate-100 dark:divide-slate-800 mb-6">
+          <ToggleSwitch enabled={notifications.emailAlerts} onChange={v => setNotifications(n => ({...n, emailAlerts: v}))} label="Email Alerts" description="Receive alerts via email" />
           <ToggleSwitch enabled={notifications.weatherAlerts} onChange={v => setNotifications(n => ({...n, weatherAlerts: v}))} label="Weather Alerts" description="Get notified about severe weather in your area" />
           <ToggleSwitch enabled={notifications.dailyForecast} onChange={v => setNotifications(n => ({...n, dailyForecast: v}))} label="Daily Forecast" description="Morning summary of the day's weather" />
           <ToggleSwitch enabled={notifications.severeWeather} onChange={v => setNotifications(n => ({...n, severeWeather: v}))} label="Severe Weather Warnings" description="Immediate alerts for dangerous conditions" />
           <ToggleSwitch enabled={notifications.communityUpdates} onChange={v => setNotifications(n => ({...n, communityUpdates: v}))} label="Community Updates" description="Likes and comments on your reports" />
+        </div>
+
+        <div className="flex gap-2 border-t border-slate-200 dark:border-slate-700 pt-4">
+          <button onClick={() => handleTestNotification('push')} className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+             Test Push
+          </button>
+          <button onClick={() => handleTestNotification('email')} className="flex-1 px-4 py-2 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-xl text-sm font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors">
+             Test Email
+          </button>
         </div>
       </SettingsSection>
 

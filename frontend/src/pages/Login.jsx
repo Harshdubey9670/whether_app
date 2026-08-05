@@ -6,10 +6,28 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useAuth();
+  const { login, devLoginRecovery } = useAuth();
   const navigate = useNavigate();
 
   const [error, setError] = useState('');
+  const [showDevRecoveryModal, setShowDevRecoveryModal] = useState(false);
+  const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryError, setRecoveryError] = useState('');
+
+  const isDevRecoveryEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_LOGIN_RECOVERY === 'true';
+
+  const handleDevRecovery = async (e) => {
+    e.preventDefault();
+    setRecoveryError('');
+    if (!recoveryEmail) return;
+
+    const result = await devLoginRecovery(recoveryEmail);
+    if (result.success) {
+      navigate('/dashboard');
+    } else {
+      setRecoveryError(result.error || 'Failed to recover account.');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -67,9 +85,15 @@ const Login = () => {
               <div>
                 <div className="flex justify-between items-center mb-1">
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
-                  <Link to="/forgot-password" className="text-xs text-primary-500 hover:text-primary-600 transition-colors">
-                    Forgot password?
-                  </Link>
+                  {isDevRecoveryEnabled && (
+                    <button
+                      type="button"
+                      onClick={() => setShowDevRecoveryModal(true)}
+                      className="text-xs text-primary-500 hover:text-primary-600 transition-colors"
+                    >
+                      Forgot password?
+                    </button>
+                  )}
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -104,6 +128,57 @@ const Login = () => {
           </div>
         </div>
       </div>
+
+      {/* Dev Recovery Modal */}
+      {showDevRecoveryModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/80 backdrop-blur-sm p-4">
+          <div className="glass w-full max-w-md p-8 rounded-3xl shadow-2xl relative">
+            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Dev Recovery</h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+              Enter your registered email to bypass login for development testing.
+            </p>
+
+            {recoveryError && (
+              <div className="mb-4 p-3 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 rounded-xl text-sm font-medium border border-red-200 dark:border-red-800">
+                {recoveryError}
+              </div>
+            )}
+
+            <form onSubmit={handleDevRecovery} className="space-y-4">
+              <div>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-slate-400" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={recoveryEmail}
+                    onChange={(e) => setRecoveryEmail(e.target.value)}
+                    className="block w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-600 rounded-xl bg-white/50 dark:bg-slate-800/50 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-colors"
+                    placeholder="user@example.com"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowDevRecoveryModal(false)}
+                  className="flex-1 py-3 px-4 border border-slate-300 dark:border-slate-600 rounded-xl text-sm font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 px-4 rounded-xl text-sm font-semibold text-white bg-primary-600 hover:bg-primary-700 transition-colors"
+                >
+                  Recover Account
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

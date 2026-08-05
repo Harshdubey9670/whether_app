@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api, { login as loginApi, register as registerApi, logout as logoutApi, getProfile } from '../services/api';
+import RecoveryService from '../services/RecoveryService';
 
 const AuthContext = createContext();
 
@@ -80,8 +81,34 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const devLoginRecovery = async (email) => {
+    setLoading(true);
+    try {
+      const data = await RecoveryService.devLoginRecovery(email);
+      setUser(data);
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: err.response?.data?.message || 'Recovery failed' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const forcePasswordChange = async (password) => {
+    setLoading(true);
+    try {
+      const data = await RecoveryService.forcePasswordChange(password);
+      setUser(data);
+      return { success: true, data };
+    } catch (err) {
+      return { success: false, error: err.response?.data?.message || 'Password update failed' };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, register, logout, loading, devLoginRecovery, forcePasswordChange }}>
       {children}
     </AuthContext.Provider>
   );

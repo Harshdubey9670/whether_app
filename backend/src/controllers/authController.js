@@ -29,6 +29,10 @@ const registerUser = async (req, res, next) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        requiresPasswordChange: user.requiresPasswordChange,
+        favorites: user.favorites,
+        recentSearches: user.recentSearches,
+        preferences: user.preferences,
       });
     } else {
       res.status(400);
@@ -56,6 +60,10 @@ const loginUser = async (req, res, next) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        requiresPasswordChange: user.requiresPasswordChange,
+        favorites: user.favorites,
+        recentSearches: user.recentSearches,
+        preferences: user.preferences,
       });
     } else {
       res.status(401);
@@ -91,6 +99,10 @@ const getUserProfile = async (req, res, next) => {
         email: user.email,
         role: user.role,
         avatar: user.avatar,
+        requiresPasswordChange: user.requiresPasswordChange,
+        favorites: user.favorites,
+        recentSearches: user.recentSearches,
+        preferences: user.preferences,
       });
     } else {
       res.status(404);
@@ -101,4 +113,121 @@ const getUserProfile = async (req, res, next) => {
   }
 };
 
-export { registerUser, loginUser, logoutUser, getUserProfile };
+// @desc    Update user profile (favorites, recents, settings)
+// @route   PUT /api/auth/profile
+// @access  Private
+const updateUserProfile = async (req, res, next) => {
+  try {
+    const user = await User.findById(req.user._id);
+
+    if (user) {
+      user.name = req.body.name || user.name;
+      user.avatar = req.body.avatar || user.avatar;
+      
+      if (req.body.favorites !== undefined) {
+        user.favorites = req.body.favorites;
+      }
+      if (req.body.recentSearches !== undefined) {
+        user.recentSearches = req.body.recentSearches;
+      }
+      if (req.body.preferences) {
+        user.preferences = { ...user.preferences, ...req.body.preferences };
+      }
+
+      if (req.body.password) {
+        user.password = req.body.password;
+      }
+
+      const updatedUser = await user.save();
+
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        avatar: updatedUser.avatar,
+        requiresPasswordChange: updatedUser.requiresPasswordChange,
+        favorites: updatedUser.favorites,
+        recentSearches: updatedUser.recentSearches,
+        preferences: updatedUser.preferences,
+      });
+    } else {
+      res.status(404);
+      throw new Error('User not found');
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Temporary development login recovery bypass
+// @route   POST /api/auth/dev-login-recovery
+// @access  Public (Dev Only)
+const devLoginRecovery = async (req, res, next) => {
+  if (process.env.NODE_ENV !== 'development' && process.env.ENABLE_DEV_LOGIN_RECOVERY !== 'true') {
+    res.status(403);
+    return next(new Error('This endpoint is disabled in production.'));
+  }
+
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'No account found.' });
+    }
+
+    user.requiresPasswordChange = true;
+    await user.save();
+
+    generateToken(res, user._id);
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      requiresPasswordChange: user.requiresPasswordChange,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// @desc    Force password change for recovered sessions
+// @route   POST /api/auth/force-password-change
+// @access  Private
+const forcePasswordChange = async (req, res, next) => {
+  try {
+    const { password } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      res.status(404);
+      throw new Error('User not found');
+    }
+
+    if (!password || password.length < 6) {
+      res.status(400);
+      throw new Error('Password must be at least 6 characters');
+    }
+
+    user.password = password;
+    user.requiresPasswordChange = false;
+    await user.save();
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      avatar: user.avatar,
+      requiresPasswordChange: user.requiresPasswordChange,
+      message: 'Password updated successfully',
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { registerUser, loginUser, logoutUser, getUserProfile, updateUserProfile, devLoginRecovery, forcePasswordChange };

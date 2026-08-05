@@ -33,6 +33,37 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    requiresPasswordChange: {
+      type: Boolean,
+      default: false,
+    },
+    favorites: {
+      type: [String],
+      default: [],
+    },
+    recentSearches: {
+      type: [String],
+      default: [],
+    },
+    preferences: {
+      units: {
+        type: String,
+        enum: ['metric', 'imperial'],
+        default: 'metric'
+      },
+      notifications: {
+        weatherAlerts: { type: Boolean, default: false },
+        dailyForecast: { type: Boolean, default: false },
+        severeWarnings: { type: Boolean, default: false },
+        communityUpdates: { type: Boolean, default: false },
+        emailAlerts: { type: Boolean, default: false },
+        pushAlerts: { type: Boolean, default: false }
+      }
+    },
+    pushSubscription: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null
+    }
   },
   {
     timestamps: true,
@@ -45,9 +76,9 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 // Pre-save middleware to hash the password
-userSchema.pre('save', async function (next) {
+userSchema.pre('save', async function () {
   if (!this.isModified('password')) {
-    next();
+    return;
   }
 
   const salt = await bcrypt.genSalt(10);
