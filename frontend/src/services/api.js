@@ -1,6 +1,8 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// In production, fallback to relative '/api' if not explicitly set (assumes same domain).
+// In development, fallback to 'http://localhost:5001/api' (the port the backend runs on).
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:5001/api');
 
 const api = axios.create({
   baseURL: API_URL,

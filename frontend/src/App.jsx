@@ -13,6 +13,8 @@ import HealthCenter from './pages/HealthCenter';
 import AdminDashboard from './pages/AdminDashboard';
 import Settings from './pages/Settings';
 
+import ForgotPassword from './pages/ForgotPassword';
+
 function App() {
   return (
     <Routes>
@@ -20,6 +22,7 @@ function App() {
         <Route index element={<LandingPage />} />
         <Route path="login" element={<Login />} />
         <Route path="register" element={<Register />} />
+        <Route path="forgot-password" element={<ForgotPassword />} />
       </Route>
       
       <Route path="/dashboard" element={<DashboardLayout />}>
