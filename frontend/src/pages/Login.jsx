@@ -14,7 +14,8 @@ const Login = () => {
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoveryError, setRecoveryError] = useState('');
 
-  const isDevRecoveryEnabled = import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_LOGIN_RECOVERY === 'true';
+  // Always enable recovery for portfolio demo purposes
+  const isDevRecoveryEnabled = true;
 
   const handleDevRecovery = async (e) => {
     e.preventDefault();
