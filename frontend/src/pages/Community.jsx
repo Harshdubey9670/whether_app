@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Image, MapPin, Send, MessageCircle, Heart, Share2, Loader2, Video } from 'lucide-react';
-import { getCommunityReports, createCommunityReport, toggleLikeReport, addCommentToReport } from '../services/api';
+import { getCommunityReports, createCommunityReport, toggleLikeReport, addCommentToReport, getCurrentWeather } from '../services/api';
+import { useLocation } from '../contexts/LocationContext';
 
 const Community = () => {
   const queryClient = useQueryClient();
+  const { locationQuery, coords } = useLocation();
   const [reportType, setReportType] = useState('Rain');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState(null);
@@ -12,6 +14,13 @@ const Community = () => {
   const { data: reports, isLoading } = useQuery({
     queryKey: ['communityReports'],
     queryFn: getCommunityReports,
+  });
+
+  const { data: weatherData } = useQuery({
+    queryKey: ['weather', locationQuery],
+    queryFn: () => getCurrentWeather(locationQuery),
+    enabled: !!locationQuery,
+    staleTime: 5 * 60 * 1000,
   });
 
   const createReportMutation = useMutation({
@@ -30,7 +39,10 @@ const Community = () => {
     const formData = new FormData();
     formData.append('reportType', reportType);
     formData.append('description', description);
-    formData.append('location', JSON.stringify({ name: 'Current Location', lat: 0, lng: 0 }));
+    
+    const locName = weatherData?.location?.name || 'Unknown Location';
+    formData.append('location', JSON.stringify({ name: locName, lat: coords?.lat || 0, lng: coords?.lng || 0 }));
+    
     if (file) {
       formData.append('media', file);
     }
