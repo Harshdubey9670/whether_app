@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, ImageIcon, MapPin, Smile, Frown, Meh, Plus, Loader2, BookOpen, X } from 'lucide-react';
-import { getJournalEntries, createJournalEntry } from '../services/api';
+import { getJournalEntries, createJournalEntry, getCurrentWeather } from '../services/api';
 import { useLocation } from '../contexts/LocationContext';
 
 const MOODS = [
@@ -21,7 +21,7 @@ const CONDITION_EMOJIS = {
 
 const WeatherJournal = () => {
   const queryClient = useQueryClient();
-  const { locationQuery, coords } = useLocation();
+  const { locationQuery } = useLocation();
   const [showForm, setShowForm] = useState(false);
   const [mood, setMood] = useState('Good');
   const [notes, setNotes] = useState('');
@@ -31,6 +31,13 @@ const WeatherJournal = () => {
   const { data: entries, isLoading } = useQuery({
     queryKey: ['journalEntries'],
     queryFn: getJournalEntries,
+  });
+
+  const { data: weatherData } = useQuery({
+    queryKey: ['weather', locationQuery],
+    queryFn: () => getCurrentWeather(locationQuery),
+    enabled: !!locationQuery,
+    staleTime: 5 * 60 * 1000,
   });
 
   const createEntryMutation = useMutation({
@@ -51,8 +58,13 @@ const WeatherJournal = () => {
     formData.append('mood', mood);
     formData.append('notes', notes);
     formData.append('activities', JSON.stringify(activities.split(',').map(a => a.trim()).filter(Boolean)));
-    formData.append('weather', JSON.stringify({ temperature: 24, condition: 'Sunny' }));
-    formData.append('location', JSON.stringify({ name: 'Current Location' }));
+    
+    const locName = weatherData?.location?.name || 'Unknown Location';
+    const temp = weatherData?.current?.temp_c || 0;
+    const cond = weatherData?.current?.condition?.text || 'Unknown';
+    
+    formData.append('weather', JSON.stringify({ temperature: temp, condition: cond }));
+    formData.append('location', JSON.stringify({ name: locName }));
     if (file) formData.append('photos', file);
     createEntryMutation.mutate(formData);
   };
