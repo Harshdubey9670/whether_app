@@ -10,7 +10,6 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './src/config/db.js';
 import { errorHandler, notFound } from './src/middleware/errorMiddleware.js';
-import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
 import authRoutes from './src/routes/authRoutes.js';
 import weatherRoutes from './src/routes/weatherRoutes.js';
@@ -70,9 +69,6 @@ app.use(cors({
 
 app.use(helmet());
 app.use(compression());
-
-// Data sanitization against NoSQL query injection
-app.use(mongoSanitize());
 
 // Rate Limiting
 const limiter = rateLimit({
