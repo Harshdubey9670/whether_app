@@ -53,7 +53,7 @@ const LiveMap = () => {
   const { convertTemp, convertWind, tempUnit, windUnit } = useSettings();
   
   const [activeLayerId, setActiveLayerId] = useState('precipitation_new');
-  const [baseMap, setBaseMap] = useState('dark');
+  const [baseMap, setBaseMap] = useState('street');
   const [layerKey, setLayerKey] = useState(0); 
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
