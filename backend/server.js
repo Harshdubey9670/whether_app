@@ -85,6 +85,15 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
+// Root URL - friendly welcome message
+app.get('/', (req, res) => {
+  res.status(200).json({ 
+    message: 'Welcome to the WeatherVerse AI API', 
+    status: 'online',
+    documentation: 'This is the backend API. Please visit the frontend application to use the app.'
+  });
+});
+
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'WeatherVerse AI API is running' });
 });
