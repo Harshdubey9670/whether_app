@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { 
-  CloudRain, Wind, ThermometerSun, Droplets,
+  Wind, ThermometerSun, Droplets,
   Eye, MapPin, Search, Loader2, Navigation, AlertCircle, X,
   Star, History, Sunrise, Sunset, Moon, Activity
 } from 'lucide-react';

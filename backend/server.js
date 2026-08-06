@@ -39,19 +39,50 @@ io.on('connection', (socket) => {
   });
 });
 
+import mongoSanitize from 'express-mongo-sanitize';
+import xss from 'xss-clean';
+import rateLimit from 'express-rate-limit';
+
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// CORS config
+const allowedOrigins = process.env.NODE_ENV === 'production' 
+  ? [process.env.CLIENT_URL, 'https://whether-app.harshdubey112005.workers.dev'] // Add other production domains here
+  : true; // Allow all in dev
+
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow all origins
-    callback(null, true);
+    if (!origin || allowedOrigins === true || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
   },
   credentials: true
 }));
+
 app.use(helmet());
 app.use(compression());
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
+app.use(xss());
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: 'Too many requests from this IP, please try again after 15 minutes'
+});
+// Apply the rate limiting middleware to all API requests
+app.use('/api', limiter);
 
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));

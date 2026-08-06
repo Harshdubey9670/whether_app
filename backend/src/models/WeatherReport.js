@@ -6,11 +6,12 @@ const weatherReportSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'User',
+      index: true,
     },
     location: {
       name: { type: String, required: true },
-      lat: { type: Number, required: true },
-      lng: { type: Number, required: true },
+      lat: { type: Number, required: true, index: true },
+      lng: { type: Number, required: true, index: true },
     },
     reportType: {
       type: String,

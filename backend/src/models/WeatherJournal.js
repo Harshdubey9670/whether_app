@@ -6,10 +6,12 @@ const weatherJournalSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       required: true,
       ref: 'User',
+      index: true,
     },
     date: {
       type: Date,
       default: Date.now,
+      index: true,
     },
     location: {
       name: { type: String },
