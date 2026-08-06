@@ -40,7 +40,6 @@ io.on('connection', (socket) => {
 });
 
 import mongoSanitize from 'express-mongo-sanitize';
-import xss from 'xss-clean';
 import rateLimit from 'express-rate-limit';
 
 // Middleware
@@ -69,9 +68,6 @@ app.use(compression());
 
 // Data sanitization against NoSQL query injection
 app.use(mongoSanitize());
-
-// Data sanitization against XSS
-app.use(xss());
 
 // Rate Limiting
 const limiter = rateLimit({
