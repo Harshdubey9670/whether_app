@@ -102,11 +102,11 @@ const getCurrentWeather = async (req, res, next) => {
         country: countryOverride || currentData.sys.country 
       },
       current: { 
-        temp_c: Math.round(currentData.main.temp), 
+        temp_c: Number(currentData.main.temp.toFixed(1)), 
         condition: { text: currentData.weather[0].main }, 
         humidity: currentData.main.humidity, 
-        wind_kph: Math.round(currentData.wind.speed * 3.6), 
-        vis_km: (currentData.visibility / 1000) || 10, 
+        wind_kph: Number((currentData.wind.speed * 3.6).toFixed(1)), 
+        vis_km: Number((currentData.visibility / 1000).toFixed(1)) || 10, 
         uv: Math.round(Math.random() * 10), // Mocked for Free Tier
         pressure_mb: currentData.main.pressure,
         aqi: Math.round(Math.random() * 100 + 20), // Mocked for Free Tier
@@ -120,12 +120,12 @@ const getCurrentWeather = async (req, res, next) => {
     };
 
     // Replace the first day with actual data
-    mappedData.forecast.forecastday[0].day.maxtemp_c = Math.round(currentData.main.temp_max);
-    mappedData.forecast.forecastday[0].day.mintemp_c = Math.round(currentData.main.temp_min);
+    mappedData.forecast.forecastday[0].day.maxtemp_c = Number(currentData.main.temp_max.toFixed(1));
+    mappedData.forecast.forecastday[0].day.mintemp_c = Number(currentData.main.temp_min.toFixed(1));
     mappedData.forecast.forecastday[0].day.condition.text = currentData.weather[0].main;
     mappedData.forecast.forecastday[0].hour = forecastData.list.slice(0, 8).map(item => ({
       time: item.dt_txt,
-      temp_c: Math.round(item.main.temp)
+      temp_c: Number(item.main.temp.toFixed(1))
     }));
 
     res.json(mappedData);

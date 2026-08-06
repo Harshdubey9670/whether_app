@@ -39,16 +39,16 @@ export const SettingsProvider = ({ children }) => {
 
   const convertTemp = (tempC) => {
     if (units === 'imperial') {
-      return Math.round((tempC * 9/5) + 32);
+      return Number(((tempC * 9/5) + 32).toFixed(1));
     }
-    return tempC;
+    return Number(Number(tempC).toFixed(1));
   };
 
   const convertWind = (speedKph) => {
     if (units === 'imperial') {
-      return Math.round(speedKph / 1.609);
+      return Number((speedKph / 1.609).toFixed(1));
     }
-    return speedKph;
+    return Number(Number(speedKph).toFixed(1));
   };
 
   const tempUnit = units === 'imperial' ? '°F' : '°C';

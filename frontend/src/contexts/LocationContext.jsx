@@ -29,9 +29,24 @@ export const LocationProvider = ({ children }) => {
       (err) => {
         console.warn('Location error:', err.message);
         setError(err.message);
-        setPermissionStatus('denied');
-        // Fall back to New York if permission denied
-        setLocationQuery('New York');
+        
+        // Fallback to IP-based Geolocation for better accuracy than hardcoded 'New York'
+        fetch('https://ipapi.co/json/')
+          .then(res => res.json())
+          .then(data => {
+            if (data.latitude && data.longitude) {
+              setCoords({ lat: data.latitude, lng: data.longitude });
+              setLocationQuery(`${data.latitude},${data.longitude}`);
+              setPermissionStatus('granted');
+            } else {
+              setPermissionStatus('denied');
+              setLocationQuery('New York');
+            }
+          })
+          .catch(() => {
+            setPermissionStatus('denied');
+            setLocationQuery('New York');
+          });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
