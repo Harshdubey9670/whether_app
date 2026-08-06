@@ -2,12 +2,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { CloudRain, Wind, Thermometer, Map, Activity, Zap, User } from 'lucide-react';
 import { useGuest } from '../contexts/GuestContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const LandingPage = () => {
   const { continueAsGuest, guestLoading } = useGuest();
+  const { logout } = useAuth();
   const navigate = useNavigate();
 
   const handleGuestLogin = async () => {
+    await logout(); // Ensure any existing user session is cleared before becoming a guest
     const res = await continueAsGuest();
     if (res.success) {
       navigate('/dashboard');

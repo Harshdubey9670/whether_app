@@ -47,6 +47,9 @@ function App() {
         </Route>
 
         <Route path="/admin" element={<AdminDashboard />} />
+
+        {/* Catch-all Route for unknown paths like /features */}
+        <Route path="*" element={<LandingPage />} />
       </Routes>
     </Suspense>
   );
