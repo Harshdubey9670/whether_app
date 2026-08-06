@@ -10,6 +10,14 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import connectDB from './src/config/db.js';
 import { errorHandler, notFound } from './src/middleware/errorMiddleware.js';
+import mongoSanitize from 'express-mongo-sanitize';
+import rateLimit from 'express-rate-limit';
+import authRoutes from './src/routes/authRoutes.js';
+import weatherRoutes from './src/routes/weatherRoutes.js';
+import aiRoutes from './src/routes/aiRoutes.js';
+import communityRoutes from './src/routes/communityRoutes.js';
+import journalRoutes from './src/routes/journalRoutes.js';
+import notificationRoutes from './src/routes/notificationRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -38,9 +46,6 @@ io.on('connection', (socket) => {
     console.log(`Socket disconnected: ${socket.id}`);
   });
 });
-
-import mongoSanitize from 'express-mongo-sanitize';
-import rateLimit from 'express-rate-limit';
 
 // Middleware
 app.use(express.json());
@@ -83,14 +88,6 @@ app.use('/api', limiter);
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
-
-// Routes
-import authRoutes from './src/routes/authRoutes.js';
-import weatherRoutes from './src/routes/weatherRoutes.js';
-import aiRoutes from './src/routes/aiRoutes.js';
-import communityRoutes from './src/routes/communityRoutes.js';
-import journalRoutes from './src/routes/journalRoutes.js';
-import notificationRoutes from './src/routes/notificationRoutes.js';
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'WeatherVerse AI API is running' });
