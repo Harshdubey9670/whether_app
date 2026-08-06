@@ -51,6 +51,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const data = await loginApi(credentials);
       setUser(data);
+      localStorage.removeItem('wv_guest'); // Clear guest on login
       return { success: true, data };
     } catch (err) {
       return { success: false, error: err.response?.data?.message || 'Login failed' };
@@ -62,8 +63,18 @@ export const AuthProvider = ({ children }) => {
   const register = async (credentials) => {
     setLoading(true);
     try {
-      const data = await registerApi(credentials);
+      // Migrate guest preferences before registering
+      const guestPrefs = localStorage.getItem('weatherverse_settings');
+      const recentSearches = localStorage.getItem('weatherverse_recent');
+      
+      const data = await registerApi({
+        ...credentials,
+        preferences: guestPrefs ? JSON.parse(guestPrefs) : undefined,
+        recentSearches: recentSearches ? JSON.parse(recentSearches) : undefined
+      });
+      
       setUser(data);
+      localStorage.removeItem('wv_guest'); // Clear guest on register
       return { success: true, data };
     } catch (err) {
       return { success: false, error: err.response?.data?.message || 'Registration failed' };
@@ -108,7 +119,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading, devLoginRecovery, forcePasswordChange }}>
+    <AuthContext.Provider value={{ user, setUser, login, register, logout, loading, devLoginRecovery, forcePasswordChange }}>
       {children}
     </AuthContext.Provider>
   );

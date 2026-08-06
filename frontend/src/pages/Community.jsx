@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Image, MapPin, Send, MessageCircle, Heart, Share2, Loader2, Video } from 'lucide-react';
 import { getCommunityReports, createCommunityReport, toggleLikeReport, addCommentToReport, getCurrentWeather } from '../services/api';
 import { useLocation } from '../contexts/LocationContext';
+import RequireAuth from '../components/Auth/RequireAuth';
 
 const Community = () => {
   const queryClient = useQueryClient();
@@ -40,14 +41,35 @@ const Community = () => {
     formData.append('reportType', reportType);
     formData.append('description', description);
     
-    const locName = weatherData?.location?.name || 'Unknown Location';
-    formData.append('location', JSON.stringify({ name: locName, lat: coords?.lat || 0, lng: coords?.lng || 0 }));
-    
     if (file) {
       formData.append('media', file);
     }
 
-    createReportMutation.mutate(formData);
+    // Get exact location and current weather for this specific exact location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        try {
+          const exactWeather = await getCurrentWeather(`${lat},${lon}`);
+          const locName = exactWeather?.location?.name || weatherData?.location?.name || 'Unknown Location';
+          formData.append('location', JSON.stringify({ name: locName, lat, lng: lon }));
+          createReportMutation.mutate(formData);
+        } catch {
+          const locName = weatherData?.location?.name || 'Unknown Location';
+          formData.append('location', JSON.stringify({ name: locName, lat, lng: lon }));
+          createReportMutation.mutate(formData);
+        }
+      }, () => {
+        const locName = weatherData?.location?.name || 'Unknown Location';
+        formData.append('location', JSON.stringify({ name: locName, lat: coords?.lat || 0, lng: coords?.lng || 0 }));
+        createReportMutation.mutate(formData);
+      }, { enableHighAccuracy: true });
+    } else {
+      const locName = weatherData?.location?.name || 'Unknown Location';
+      formData.append('location', JSON.stringify({ name: locName, lat: coords?.lat || 0, lng: coords?.lng || 0 }));
+      createReportMutation.mutate(formData);
+    }
   };
 
   return (
@@ -85,14 +107,16 @@ const Community = () => {
               </select>
             </div>
             
-            <button 
-              type="submit" 
-              disabled={createReportMutation.isPending || !description.trim()}
-              className="px-6 py-2 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-2"
-            >
-              {createReportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-              Post Report
-            </button>
+            <RequireAuth>
+              <button 
+                type="submit" 
+                disabled={createReportMutation.isPending || !description.trim()}
+                className="px-6 py-2 bg-primary-500 text-white rounded-xl font-semibold hover:bg-primary-600 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {createReportMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+                Post Report
+              </button>
+            </RequireAuth>
           </div>
           
           {file && (
@@ -189,13 +213,12 @@ const ReportCard = ({ report, queryClient }) => {
       )}
 
       <div className="flex items-center gap-6 pt-4 border-t border-slate-200 dark:border-slate-700">
-        <button 
-          onClick={handleLike}
-          className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors"
-        >
-          <Heart className={`w-5 h-5 ${report.likes?.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
-          <span className="font-medium text-sm">{report.likes?.length || 0}</span>
-        </button>
+        <RequireAuth onClick={handleLike}>
+          <button className="flex items-center gap-2 text-slate-500 hover:text-red-500 transition-colors">
+            <Heart className={`w-5 h-5 ${report.likes?.length > 0 ? 'fill-red-500 text-red-500' : ''}`} />
+            <span className="font-medium text-sm">{report.likes?.length || 0}</span>
+          </button>
+        </RequireAuth>
         <button 
           onClick={() => setShowComments(!showComments)}
           className="flex items-center gap-2 text-slate-500 hover:text-blue-500 transition-colors"
@@ -219,13 +242,15 @@ const ReportCard = ({ report, queryClient }) => {
               placeholder="Add a comment..."
               className="flex-1 bg-slate-50 dark:bg-slate-800 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary-500 dark:text-white"
             />
-            <button 
-              type="submit" 
-              disabled={commentMutation.isPending || !commentText.trim()}
-              className="p-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 disabled:opacity-50"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            <RequireAuth>
+              <button 
+                type="submit" 
+                disabled={commentMutation.isPending || !commentText.trim()}
+                className="p-2 bg-primary-500 text-white rounded-xl hover:bg-primary-600 disabled:opacity-50"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </RequireAuth>
           </form>
           
           <div className="space-y-3">

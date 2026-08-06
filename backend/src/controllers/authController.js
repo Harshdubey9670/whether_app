@@ -232,4 +232,26 @@ const forcePasswordChange = async (req, res, next) => {
   }
 };
 
-export { registerUser, loginUser, logoutUser, getUserProfile, updateUserProfile, devLoginRecovery, forcePasswordChange };
+// @desc    Generate Guest Session
+// @route   POST /api/auth/guest
+// @access  Public
+import { generateGuestToken } from '../utils/generateToken.js';
+import crypto from 'crypto';
+
+const generateGuestSession = async (req, res, next) => {
+  try {
+    const guestId = `guest_${crypto.randomBytes(8).toString('hex')}`;
+    generateGuestToken(res, guestId);
+    
+    res.status(200).json({
+      _id: guestId,
+      name: 'Guest User',
+      role: 'guest',
+      isGuest: true
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export { registerUser, loginUser, logoutUser, getUserProfile, updateUserProfile, devLoginRecovery, forcePasswordChange, generateGuestSession };

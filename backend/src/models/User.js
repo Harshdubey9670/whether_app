@@ -22,8 +22,30 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ['user', 'admin'],
+      enum: ['guest', 'user', 'premium', 'admin', 'moderator'],
       default: 'user',
+    },
+    passkeys: [
+      {
+        credentialID: Buffer,
+        credentialPublicKey: Buffer,
+        counter: Number,
+        transports: [String]
+      }
+    ],
+    recoveryCodes: [
+      {
+        codeHash: String,
+        used: { type: Boolean, default: false }
+      }
+    ],
+    hasRecoverySetup: {
+      type: Boolean,
+      default: false,
+    },
+    webAuthnChallenge: {
+      type: String,
+      default: null
     },
     isVerified: {
       type: Boolean,

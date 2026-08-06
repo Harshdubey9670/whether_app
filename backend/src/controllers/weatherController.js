@@ -55,16 +55,29 @@ const getCurrentWeather = async (req, res, next) => {
       const cleanLon = encodeURIComponent(lon.trim());
       queryParam = `lat=${cleanLat}&lon=${cleanLon}`;
 
-      // Perform highly accurate reverse geocoding to get exact city/state instead of generic weather station name
+      // Perform highly accurate reverse geocoding using Nominatim (OpenStreetMap) to get exact neighborhood/suburb
       try {
-        const geoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${cleanLat}&lon=${cleanLon}&limit=1&appid=${apiKey}`;
-        const geoRes = await fetch(geoUrl);
+        const geoUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${cleanLat}&lon=${cleanLon}&zoom=14`;
+        const geoRes = await fetch(geoUrl, {
+          headers: {
+            'User-Agent': 'WeatherVerse-App/1.0 (harshdubey112005@example.com)' // required by Nominatim policy
+          }
+        });
         if (geoRes.ok) {
           const geoData = await geoRes.json();
-          if (geoData && geoData.length > 0) {
-            const loc = geoData[0];
-            locationNameOverride = loc.state ? `${loc.name}, ${loc.state}` : loc.name;
-            countryOverride = loc.country;
+          if (geoData && geoData.address) {
+            const addr = geoData.address;
+            const exactPlace = addr.suburb || addr.neighbourhood || addr.village || addr.town || addr.city_district || addr.city;
+            const broaderPlace = addr.city || addr.state_district || addr.state;
+            
+            if (exactPlace && broaderPlace && exactPlace !== broaderPlace) {
+              locationNameOverride = `${exactPlace}, ${broaderPlace}`;
+            } else if (exactPlace) {
+              locationNameOverride = exactPlace;
+            } else if (geoData.name) {
+              locationNameOverride = geoData.name;
+            }
+            countryOverride = addr.country;
           }
         }
       } catch (e) {

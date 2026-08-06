@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@google/genai": "^2.12.0",
+    "@simplewebauthn/server": "^13.3.2",
     "apicache": "^1.6.3",
     "bcrypt": "^6.0.0",
     "bullmq": "^6.0.8",

@@ -6,6 +6,7 @@ import { useSettings } from '../contexts/SettingsContext';
 import { useNavigate } from 'react-router-dom';
 import { updateNotificationPreferences, getVapidPublicKey, subscribePush, triggerTestNotification } from '../services/api';
 import { User, Bell, Shield, Palette, MapPin, ChevronRight, Save, LogOut, Sun, Moon, Navigation } from 'lucide-react';
+import RequireAuth from '../components/Auth/RequireAuth';
 
 const SettingsSection = ({ title, icon, children }) => (
   <div className="glass rounded-3xl p-6">
@@ -208,9 +209,11 @@ const Settings = () => {
             <p className="text-sm text-slate-500">Enable how you want to receive alerts.</p>
           </div>
           <div className="flex gap-2">
-             <button onClick={handleEnablePush} className="px-4 py-2 bg-indigo-500 text-white rounded-xl text-sm font-semibold hover:bg-indigo-600 transition-colors">
-               {pushStatus || (notifications.pushAlerts ? 'Push Enabled' : 'Enable Web Push')}
-             </button>
+             <RequireAuth onClick={handleEnablePush}>
+               <button className="px-4 py-2 bg-indigo-500 text-white rounded-xl text-sm font-semibold hover:bg-indigo-600 transition-colors">
+                 {pushStatus || (notifications.pushAlerts ? 'Push Enabled' : 'Enable Web Push')}
+               </button>
+             </RequireAuth>
           </div>
         </div>
 
@@ -280,9 +283,11 @@ const Settings = () => {
 
       {/* Actions */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <button onClick={handleSave} className={`flex-1 py-3 rounded-2xl font-semibold transition-all ${saved ? 'bg-green-500 text-white' : 'bg-primary-500 text-white hover:bg-primary-600'}`}>
-          {saved ? '✅ Saved!' : <span className="flex items-center justify-center gap-2"><Save className="w-4 h-4" />Save Settings</span>}
-        </button>
+        <RequireAuth onClick={handleSave}>
+          <button className={`flex-1 w-full py-3 rounded-2xl font-semibold transition-all ${saved ? 'bg-green-500 text-white' : 'bg-primary-500 text-white hover:bg-primary-600'}`}>
+            {saved ? '✅ Saved!' : <span className="flex items-center justify-center gap-2"><Save className="w-4 h-4" />Save Settings</span>}
+          </button>
+        </RequireAuth>
         {user && (
           <button onClick={handleLogout} className="flex-1 py-3 rounded-2xl font-semibold bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors flex items-center justify-center gap-2 border border-red-200 dark:border-red-800">
             <LogOut className="w-4 h-4" />

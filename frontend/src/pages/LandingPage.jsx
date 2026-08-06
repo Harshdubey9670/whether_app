@@ -1,8 +1,19 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { CloudRain, Wind, Thermometer, Map, Activity, Zap } from 'lucide-react';
+import { CloudRain, Wind, Thermometer, Map, Activity, Zap, User } from 'lucide-react';
+import { useGuest } from '../contexts/GuestContext';
 
 const LandingPage = () => {
+  const { continueAsGuest, guestLoading } = useGuest();
+  const navigate = useNavigate();
+
+  const handleGuestLogin = async () => {
+    const res = await continueAsGuest();
+    if (res.success) {
+      navigate('/dashboard');
+    }
+  };
+
   return (
     <div className="pt-20 pb-16 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
       {/* Hero Section */}
@@ -34,11 +45,15 @@ const LandingPage = () => {
           transition={{ duration: 0.5, delay: 0.2 }}
           className="flex flex-col sm:flex-row justify-center gap-4"
         >
-          <Link to="/register" className="px-8 py-4 rounded-xl bg-primary-500 text-white font-semibold hover:bg-primary-600 hover:shadow-lg hover:shadow-primary-500/30 transition-all text-lg">
-            Get Started Free
-          </Link>
-          <Link to="/map" className="px-8 py-4 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold hover:bg-slate-300 dark:hover:bg-slate-700 transition-all text-lg flex items-center justify-center gap-2">
-            <Map className="w-5 h-5" /> View Live Radar
+          <button 
+            onClick={handleGuestLogin}
+            disabled={guestLoading}
+            className="px-8 py-4 rounded-xl bg-primary-500 text-white font-semibold hover:bg-primary-600 hover:shadow-lg hover:shadow-primary-500/30 transition-all text-lg flex items-center justify-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {guestLoading ? 'Starting...' : 'Continue as Guest'}
+          </button>
+          <Link to="/login" className="px-8 py-4 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-white font-semibold hover:bg-slate-300 dark:hover:bg-slate-700 transition-all text-lg flex items-center justify-center gap-2">
+            <User className="w-5 h-5" /> Login / Sign Up
           </Link>
         </motion.div>
       </div>

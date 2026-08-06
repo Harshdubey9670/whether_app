@@ -16,13 +16,36 @@ class RecoveryService {
     return response.data;
   }
 
-  /**
-   * Forces a password change for the currently authenticated user
-   * @param {string} password - The new password
-   * @returns {Promise<Object>} - The updated user profile
-   */
   async forcePasswordChange(password) {
     const response = await api.post('/auth/force-password-change', { password });
+    return response.data;
+  }
+
+  // WebAuthn Passkeys
+  async registerPasskey() {
+    const { startRegistration } = await import('@simplewebauthn/browser');
+    const { data: options } = await api.get('/auth/webauthn/register');
+    const attResp = await startRegistration({ optionsJSON: options });
+    const { data: verification } = await api.post('/auth/webauthn/register', attResp);
+    return verification;
+  }
+
+  async authenticatePasskey(email) {
+    const { startAuthentication } = await import('@simplewebauthn/browser');
+    const { data: options } = await api.post('/auth/webauthn/authenticate-options', { email });
+    const asseResp = await startAuthentication({ optionsJSON: options });
+    const { data: verification } = await api.post('/auth/webauthn/authenticate', { email, response: asseResp });
+    return verification;
+  }
+
+  // Recovery Codes
+  async generateRecoveryCodes() {
+    const response = await api.post('/auth/recovery-codes');
+    return response.data;
+  }
+
+  async verifyRecoveryCode(email, code) {
+    const response = await api.post('/auth/verify-recovery-code', { email, code });
     return response.data;
   }
 }

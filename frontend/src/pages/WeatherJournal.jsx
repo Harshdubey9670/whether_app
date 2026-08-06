@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, ImageIcon, MapPin, Smile, Frown, Meh, Plus, Loader2, BookOpen, X } from 'lucide-react';
 import { getJournalEntries, createJournalEntry, getCurrentWeather } from '../services/api';
 import { useLocation } from '../contexts/LocationContext';
+import RequireAuth from '../components/Auth/RequireAuth';
 
 const MOODS = [
   { value: 'Excellent', emoji: '😄', color: 'text-green-500 border-green-400 bg-green-50 dark:bg-green-900/20' },
@@ -59,14 +60,48 @@ const WeatherJournal = () => {
     formData.append('notes', notes);
     formData.append('activities', JSON.stringify(activities.split(',').map(a => a.trim()).filter(Boolean)));
     
-    const locName = weatherData?.location?.name || 'Unknown Location';
-    const temp = weatherData?.current?.temp_c || 0;
-    const cond = weatherData?.current?.condition?.text || 'Unknown';
-    
-    formData.append('weather', JSON.stringify({ temperature: temp, condition: cond }));
-    formData.append('location', JSON.stringify({ name: locName }));
     if (file) formData.append('photos', file);
-    createEntryMutation.mutate(formData);
+
+    // Get exact location and current weather for this specific exact location
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const lat = position.coords.latitude;
+        const lon = position.coords.longitude;
+        try {
+          const exactWeather = await getCurrentWeather(`${lat},${lon}`);
+          const locName = exactWeather?.location?.name || weatherData?.location?.name || 'Unknown Location';
+          const temp = exactWeather?.current?.temp_c || weatherData?.current?.temp_c || 0;
+          const cond = exactWeather?.current?.condition?.text || weatherData?.current?.condition?.text || 'Unknown';
+          
+          formData.append('weather', JSON.stringify({ temperature: temp, condition: cond }));
+          formData.append('location', JSON.stringify({ name: locName, lat, lng: lon }));
+          createEntryMutation.mutate(formData);
+        } catch {
+          // Fallback to current weatherData if API fails
+          const locName = weatherData?.location?.name || 'Unknown Location';
+          const temp = weatherData?.current?.temp_c || 0;
+          const cond = weatherData?.current?.condition?.text || 'Unknown';
+          formData.append('weather', JSON.stringify({ temperature: temp, condition: cond }));
+          formData.append('location', JSON.stringify({ name: locName, lat, lng: lon }));
+          createEntryMutation.mutate(formData);
+        }
+      }, () => {
+        // Fallback if geolocation permission is denied
+        const locName = weatherData?.location?.name || 'Unknown Location';
+        const temp = weatherData?.current?.temp_c || 0;
+        const cond = weatherData?.current?.condition?.text || 'Unknown';
+        formData.append('weather', JSON.stringify({ temperature: temp, condition: cond }));
+        formData.append('location', JSON.stringify({ name: locName }));
+        createEntryMutation.mutate(formData);
+      }, { enableHighAccuracy: true });
+    } else {
+      const locName = weatherData?.location?.name || 'Unknown Location';
+      const temp = weatherData?.current?.temp_c || 0;
+      const cond = weatherData?.current?.condition?.text || 'Unknown';
+      formData.append('weather', JSON.stringify({ temperature: temp, condition: cond }));
+      formData.append('location', JSON.stringify({ name: locName }));
+      createEntryMutation.mutate(formData);
+    }
   };
 
   return (
@@ -80,12 +115,13 @@ const WeatherJournal = () => {
           </h2>
           <p className="text-sm text-slate-500 mt-0.5">Document how weather affects your daily life</p>
         </div>
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all ${showForm ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white' : 'bg-sky-500 text-white hover:bg-sky-600 shadow-sm shadow-sky-500/30'}`}
-        >
-          {showForm ? <><X className="w-4 h-4" />Cancel</> : <><Plus className="w-4 h-4" />New Entry</>}
-        </button>
+        <RequireAuth onClick={() => setShowForm(!showForm)}>
+          <button
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl font-semibold transition-all ${showForm ? 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-white' : 'bg-sky-500 text-white hover:bg-sky-600 shadow-sm shadow-sky-500/30'}`}
+          >
+            {showForm ? <><X className="w-4 h-4" />Cancel</> : <><Plus className="w-4 h-4" />New Entry</>}
+          </button>
+        </RequireAuth>
       </div>
 
       {/* New Entry Form */}

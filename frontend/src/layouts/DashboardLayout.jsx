@@ -1,5 +1,6 @@
-import { Outlet, NavLink, useNavigate, Navigate } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, Navigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useGuest } from '../contexts/GuestContext';
 import ForcePasswordChangeDialog from '../components/ForcePasswordChangeDialog';
 import { useTheme } from '../contexts/ThemeContext';
 import { useState } from 'react';
@@ -11,6 +12,7 @@ import {
 
 const DashboardLayout = () => {
   const { user, logout, loading } = useAuth();
+  const { isGuest, clearGuestSession } = useGuest();
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -24,12 +26,16 @@ const DashboardLayout = () => {
     );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  if (!user && !isGuest) {
+    return <Navigate to="/" replace />;
   }
 
   const handleLogout = async () => {
-    await logout();
+    if (user) {
+      await logout();
+    } else {
+      clearGuestSession();
+    }
     navigate('/');
   };
 
@@ -62,11 +68,11 @@ const DashboardLayout = () => {
       <div className="px-4 py-4 border-b border-white/10">
         <div className="flex items-center gap-3 p-3 rounded-2xl bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
           <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-white font-bold text-lg flex-shrink-0">
-            {user?.name?.charAt(0)?.toUpperCase() || <User className="w-5 h-5" />}
+            {user ? user.name.charAt(0).toUpperCase() : <User className="w-5 h-5" />}
           </div>
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{user?.name || 'Guest User'}</p>
-            <p className="text-xs text-slate-400 truncate">{user?.email || 'Not logged in'}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-white truncate">{user ? user.name : 'Guest User'}</p>
+            <p className="text-xs text-slate-400 truncate">{user ? user.email : 'Unregistered'}</p>
           </div>
           {user?.role === 'admin' && (
             <Shield className="w-4 h-4 text-amber-400 flex-shrink-0" />
@@ -113,13 +119,23 @@ const DashboardLayout = () => {
           <Settings className="w-5 h-5" />
           <span className="font-medium">Settings</span>
         </NavLink>
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors"
-        >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Logout</span>
-        </button>
+        {user ? (
+          <button
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-red-500/20 hover:text-red-400 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Logout</span>
+          </button>
+        ) : (
+          <Link
+            to="/login"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-400 hover:bg-sky-500/20 hover:text-sky-400 transition-colors"
+          >
+            <LogOut className="w-5 h-5" />
+            <span className="font-medium">Sign In / Register</span>
+          </Link>
+        )}
       </div>
     </aside>
   );
@@ -200,11 +216,11 @@ const DashboardLayout = () => {
             {/* Profile */}
             <div className="flex items-center gap-3 ml-1 pl-3 border-l border-slate-200 dark:border-slate-700">
               <div className="w-9 h-9 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                {user?.name?.charAt(0)?.toUpperCase() || 'G'}
+                {user ? user.name.charAt(0).toUpperCase() : 'G'}
               </div>
               <div className="hidden lg:block">
-                <p className="text-sm font-semibold text-slate-800 dark:text-white leading-none">{user?.name || 'Guest'}</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{user?.role === 'admin' ? '⭐ Admin' : '🌤️ Pro Member'}</p>
+                <p className="text-sm font-semibold text-slate-800 dark:text-white leading-none">{user ? user.name : 'Guest User'}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{user ? (user.role === 'admin' ? '⭐ Admin' : '🌤️ Pro Member') : '🚀 Upgrade Account'}</p>
               </div>
             </div>
           </div>

@@ -85,15 +85,6 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 }
 
-// Root URL - friendly welcome message
-app.get('/', (req, res) => {
-  res.status(200).json({ 
-    message: 'Welcome to the WeatherVerse AI API', 
-    status: 'online',
-    documentation: 'This is the backend API. Please visit the frontend application to use the app.'
-  });
-});
-
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'success', message: 'WeatherVerse AI API is running' });
 });
@@ -105,6 +96,29 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/community', communityRoutes);
 app.use('/api/journal', journalRoutes);
 app.use('/api/notifications', notificationRoutes);
+
+import path from 'path';
+
+// Error Handling Middleware should be after the static file serving for API routes,
+// But for React router to work, we need a catch-all route before the error handler.
+
+if (process.env.NODE_ENV === 'production') {
+  const __dirname = path.resolve();
+  app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+  app.get('*', (req, res) =>
+    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
+  );
+} else {
+  // Root URL - friendly welcome message for dev mode
+  app.get('/', (req, res) => {
+    res.status(200).json({ 
+      message: 'Welcome to the WeatherVerse AI API', 
+      status: 'online',
+      documentation: 'This is the backend API. Please visit the frontend application to use the app.'
+    });
+  });
+}
 
 // Error Handling Middleware
 app.use(notFound);
