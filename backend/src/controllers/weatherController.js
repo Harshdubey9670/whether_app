@@ -46,9 +46,30 @@ const getCurrentWeather = async (req, res, next) => {
     }
 
     let queryParam = `q=${encodeURIComponent(q)}`;
+    let locationNameOverride = null;
+    let countryOverride = null;
+
     if (q.includes(',')) {
       const [lat, lon] = q.split(',');
-      queryParam = `lat=${encodeURIComponent(lat.trim())}&lon=${encodeURIComponent(lon.trim())}`;
+      const cleanLat = encodeURIComponent(lat.trim());
+      const cleanLon = encodeURIComponent(lon.trim());
+      queryParam = `lat=${cleanLat}&lon=${cleanLon}`;
+
+      // Perform highly accurate reverse geocoding to get exact city/state instead of generic weather station name
+      try {
+        const geoUrl = `https://api.openweathermap.org/geo/1.0/reverse?lat=${cleanLat}&lon=${cleanLon}&limit=1&appid=${apiKey}`;
+        const geoRes = await fetch(geoUrl);
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          if (geoData && geoData.length > 0) {
+            const loc = geoData[0];
+            locationNameOverride = loc.state ? `${loc.name}, ${loc.state}` : loc.name;
+            countryOverride = loc.country;
+          }
+        }
+      } catch (e) {
+        console.warn('Reverse geocoding failed, falling back to weather station name');
+      }
     }
 
     const currentUrl = `https://api.openweathermap.org/data/2.5/weather?${queryParam}&appid=${apiKey}&units=metric`;
@@ -77,8 +98,8 @@ const getCurrentWeather = async (req, res, next) => {
 
     const mappedData = {
       location: { 
-        name: currentData.name || (q.includes(',') ? 'Current Location' : q), 
-        country: currentData.sys.country 
+        name: locationNameOverride || currentData.name || (q.includes(',') ? 'Current Location' : q), 
+        country: countryOverride || currentData.sys.country 
       },
       current: { 
         temp_c: Math.round(currentData.main.temp), 
