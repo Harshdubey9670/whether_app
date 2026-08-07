@@ -106,9 +106,13 @@ if (process.env.NODE_ENV === 'production') {
   const __dirname = path.resolve();
   app.use(express.static(path.join(__dirname, '../frontend/dist')));
 
-  app.get('*', (req, res) =>
-    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'))
-  );
+  // Safely catch-all frontend routes without using '*' which throws path-to-regexp errors in newer Express versions
+  app.use((req, res, next) => {
+    if (req.path.startsWith('/api')) {
+      return next(); // Let API routes fall through to the 404 handler
+    }
+    res.sendFile(path.resolve(__dirname, '../frontend', 'dist', 'index.html'));
+  });
 } else {
   // Root URL - friendly welcome message for dev mode
   app.get('/', (req, res) => {
